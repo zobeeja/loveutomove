@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตารางเลือกสำหรับเดือนหน้า</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f2f5;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .header-day {
+            color: white;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background-color: white;
+            cursor: pointer;
+        }
+        select.available {
+            background-color: #c6f6d5; /* Green */
+            border-color: #9ae6b4;
+        }
+        select.unavailable {
+            background-color: #fed7d7; /* Red */
+            border-color: #feb2b2;
+        }
+        .summary-label {
+            background-color: #fff3cd;
+            font-weight: bold;
+        }
+        .count-cell {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 95%;
+            margin: 2rem auto;
+            overflow-x: auto;
+        }
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="container">
+        <h1 class="title" id="table-title">ตารางนัดหมาย</h1>
+        <div class="overflow-x-auto shadow-lg rounded-lg">
+            <table class="min-w-full bg-white">
+                <thead id="table-header">
+                    <!-- Date and Day headers will be generated here -->
+                </thead>
+                <tbody id="table-body">
+                    <!-- Data rows will be generated here -->
+                </tbody>
+                <tfoot id="table-footer">
+                    <!-- Summary rows will be generated here -->
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Configuration ---
+            const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+            const thaiDaysAbbr = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+            const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            const dayColors = {
+                'อา.': 'bg-red-500',
+                'จ.': 'bg-pink-500',
+                'อ.': 'bg-green-500',
+                'พ.': 'bg-orange-500',
+                'พฤ.': 'bg-cyan-500',
+                'ศ.': 'bg-purple-500',
+                'ส.': 'bg-indigo-500'
+            };
+            const rowLabels = ['โซบี๋', 'น้ำใส', 'เมย์', 'ต้นน้้า', 'ต้นน้ำ', 'เตย'];
+
+            // --- Date Calculation for Next Month ---
+            const now = new Date();
+            const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const year = nextMonthDate.getFullYear();
+            const month = nextMonthDate.getMonth(); // 0-11
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // --- Element References ---
+            const tableHeader = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+            const tableFooter = document.getElementById('table-footer');
+            const tableTitle = document.getElementById('table-title');
+            
+            tableTitle.textContent = `เดือนพิดจิ อยากออกเดท`;
+
+            // --- Generate Table Header ---
+            const dateRow = document.createElement('tr');
+            const dayRow = document.createElement('tr');
+            dateRow.innerHTML = '<th class="sticky-col"></th>'; // Placeholder for label column
+            dayRow.innerHTML = '<th class="sticky-col"></th>';   // Placeholder for label column
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(year, month, day);
+                const dayIndex = currentDate.getDay(); // 0 = Sunday
+                const dayAbbr = thaiDaysAbbr[dayIndex];
+                
+                // Full Date Row
+                const dateCell = document.createElement('th');
+                dateCell.textContent = `${day}/${month + 1}/${year}`;
+                dateRow.appendChild(dateCell);
+
+                // Abbreviated Day Row
+                const dayCell = document.createElement('th');
+                dayCell.textContent = dayAbbr;
+                dayCell.className = `header-day ${dayColors[dayAbbr] || 'bg-gray-500'}`;
+                dayRow.appendChild(dayCell);
+            }
+            tableHeader.appendChild(dateRow);
+            tableHeader.appendChild(dayRow);
+
+            // --- Generate Main Data Rows ---
+            rowLabels.forEach(label => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="font-bold sticky-col">${label}</td>`;
+                for (let i = 0; i < daysInMonth; i++) {
+                    const cell = document.createElement('td');
+                    const select = document.createElement('select');
+                    select.dataset.colIndex = i;
+                    select.className = "available"; // Default state
+                    
+                    const optionAvailable = document.createElement('option');
+                    optionAvailable.value = 'ว่าง';
+                    optionAvailable.textContent = 'ว่าง';
+                    
+                    const optionUnavailable = document.createElement('option');
+                    optionUnavailable.value = 'ไม่ว่าง';
+                    optionUnavailable.textContent = 'ไม่ว่าง';
+                    
+                    select.appendChild(optionAvailable);
+                    select.appendChild(optionUnavailable);
+                    
+                    select.addEventListener('change', (e) => {
+                        updateCounts(e.target);
+                        // Update color based on selection
+                        e.target.className = e.target.value === 'ว่าง' ? 'available' : 'unavailable';
+                    });
+
+                    cell.appendChild(select);
+                    row.appendChild(cell);
+                }
+                tableBody.appendChild(row);
+            });
+
+            // --- Generate Summary Rows ---
+            const summaryLabelRow = document.createElement('tr');
+            summaryLabelRow.innerHTML = `<td class="summary-label sticky-col">สรุปผล</td>`;
+            for (let i = 0; i < daysInMonth; i++) {
+                summaryLabelRow.innerHTML += `<td class="summary-label"></td>`;
+            }
+            tableFooter.appendChild(summaryLabelRow);
+
+            const availableRow = document.createElement('tr');
+            availableRow.innerHTML = `<td class="font-bold sticky-col">ว่าง</td>`;
+            for (let i = 0; i < daysInMonth; i++) {
+                availableRow.innerHTML += `<td id="count-available-${i}" class="count-cell"></td>`;
+            }
+            tableFooter.appendChild(availableRow);
+
+            const unavailableRow = document.createElement('tr');
+            unavailableRow.innerHTML = `<td class="font-bold sticky-col">ไม่ว่าง</td>`;
+            for (let i = 0; i < daysInMonth; i++) {
+                unavailableRow.innerHTML += `<td id="count-unavailable-${i}" class="count-cell"></td>`;
+            }
+            tableFooter.appendChild(unavailableRow);
+
+            // --- Counting Logic ---
+            function updateCounts(selectElement) {
+                const colIndex = selectElement.dataset.colIndex;
+                updateCountsForColumn(colIndex);
+            }
+
+            function updateCountsForColumn(colIndex) {
+                let availableCount = 0;
+                let unavailableCount = 0;
+                const totalParticipants = rowLabels.length;
+
+                const selectsInColumn = document.querySelectorAll(`select[data-col-index='${colIndex}']`);
+                
+                selectsInColumn.forEach(select => {
+                    if (select.value === 'ว่าง') {
+                        availableCount++;
+                    } else {
+                        unavailableCount++;
+                    }
+                });
+
+                const availableCell = document.getElementById(`count-available-${colIndex}`);
+                if (availableCount === totalParticipants) {
+                    availableCell.textContent = 'ไม่ล่ม ไปเท่วกันจ้า';
+                } else {
+                    availableCell.textContent = 'อาจจะยังน้าา';
+                }
+
+                document.getElementById(`count-unavailable-${colIndex}`).textContent = unavailableCount;
+            }
+
+            // --- Initial Calculation ---
+            function initializeCounts() {
+                for (let i = 0; i < daysInMonth; i++) {
+                    updateCountsForColumn(i);
+                }
+            }
+
+            initializeCounts();
+        });
+    </script>
+</body>
+</html>
+
